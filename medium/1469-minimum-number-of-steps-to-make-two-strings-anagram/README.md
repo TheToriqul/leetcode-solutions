@@ -48,8 +48,9 @@
 
 ## Solution Stats
 
-| Language | Runtime | Memory | 
-|----------|---------|--------|
-| python3 | 132 ms | 17.8 MB |
+| Language | Runtime | Memory | Status | Date |
+|----------|---------|--------|--------|------|
+| PY | 135 ms | 17.8 MB | ✅ | 2025-01-04 |
+
 
 [View on LeetCode](https://leetcode.com/problems/minimum-number-of-steps-to-make-two-strings-anagram)
