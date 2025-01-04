@@ -1,6 +1,6 @@
 # 1469. Minimum Number of Steps to Make Two Strings Anagram
 # Difficulty: Medium
-# Runtime: 135 ms
+# Runtime: 132 ms
 # Memory: 17.8 MB
 
 class Solution:
