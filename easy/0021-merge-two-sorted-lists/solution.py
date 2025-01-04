@@ -1,7 +1,7 @@
 # 21. Merge Two Sorted Lists
 # Difficulty: Easy
-# Runtime: 41 ms
-# Memory: 17.3 MB
+# Runtime: 37 ms
+# Memory: 17.4 MB
 
 # Definition for singly-linked list.
 # class ListNode:
@@ -10,9 +10,8 @@
 #         self.next = next
 class Solution:
     def mergeTwoLists(self, list1: Optional[ListNode], list2: Optional[ListNode]) -> Optional[ListNode]:
-        
-        temp = ListNode()
-        tail = temp
+        dummy = ListNode()
+        tail = dummy
 
         while list1 is not None and list2 is not None:
             if list1.val <= list2.val:
@@ -25,4 +24,4 @@ class Solution:
             tail= tail.next
 
         tail.next = list2 if list1 is None else list1
-        return temp.next
+        return dummy.next
