@@ -1,0 +1,15 @@
+# Create .gitignore
+echo "# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+
+# JavaScript
+node_modules/
+.npm
+
+# IDE
+.vscode/
+.idea/
+" > .gitignore
