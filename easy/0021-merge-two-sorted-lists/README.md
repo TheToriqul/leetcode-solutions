@@ -47,7 +47,7 @@
 
 | Language | Runtime | Memory | Status | Date |
 |----------|---------|--------|--------|------|
-| PY | 43 ms | 17.4 MB | ✅ | 2025-01-04 |
+| PY | 41 ms | 17.3 MB | ✅ | 2025-01-04 |
 
 
 [View on LeetCode](https://leetcode.com/problems/merge-two-sorted-lists)
