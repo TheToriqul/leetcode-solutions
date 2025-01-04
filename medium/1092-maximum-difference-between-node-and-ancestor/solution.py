@@ -1,7 +1,7 @@
 # 1092. Maximum Difference Between Node and Ancestor
 # Difficulty: Medium
-# Runtime: 43 ms
-# Memory: 19 MB
+# Runtime: 41 ms
+# Memory: 18.9 MB
 
 # Definition for a binary tree node.
 # class TreeNode:
