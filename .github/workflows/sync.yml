@@ -6,9 +6,6 @@ on:
     paths:
       - 'sync_leetcode.py'
       - '.github/workflows/**'
-    paths-ignore:
-      - '**/README.md'
-      - '**/solution.*'
   
 jobs:
   sync:
