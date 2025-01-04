@@ -6,7 +6,7 @@
 [![Last Sync](https://img.shields.io/github/last-commit/TheToriqul/leetcode-solutions?style=for-the-badge&label=Last%20Sync)](https://github.com/TheToriqul/leetcode-solutions/commits/main)
 [![License](https://img.shields.io/github/license/TheToriqul/leetcode-solutions?style=for-the-badge)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![LeetCode](https://img.shields.io/badge/LeetCode-FFA116?style=for-the-badge&logo=leetcode&logoColor=white)](https://leetcode.com/)
+[![LeetCode](https://img.shields.io/badge/LeetCode-FFA116?style=for-the-badge&logo=leetcode&logoColor=white)](https://leetcode.com/u/TheToriqul/)
 [![GitHub followers](https://img.shields.io/github/followers/TheToriqul?style=for-the-badge)](https://github.com/TheToriqul)
 
 An enterprise-grade automation system that synchronizes, organizes, and documents your LeetCode solutions with comprehensive analytics and documentation.
