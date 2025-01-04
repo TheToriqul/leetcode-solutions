@@ -1,4 +1,11 @@
-<h2><a href="https://leetcode.com/problems/reverse-linked-list">206. Reverse Linked List</a></h2><h3>Easy</h3><hr><p>Given the <code>head</code> of a singly linked list, reverse the list, and return <em>the reversed list</em>.</p>
+# 206. Reverse Linked List
+
+## Difficulty: Easy
+## Topics: Linked List, Recursion
+
+## Problem
+
+<p>Given the <code>head</code> of a singly linked list, reverse the list, and return <em>the reversed list</em>.</p>
 
 <p>&nbsp;</p>
 <p><strong class="example">Example 1:</strong></p>
@@ -32,3 +39,13 @@
 
 <p>&nbsp;</p>
 <p><strong>Follow up:</strong> A linked list can be reversed either iteratively or recursively. Could you implement both?</p>
+
+
+## Solution Stats
+
+| Language | Runtime | Memory | Status | Date |
+|----------|---------|--------|--------|------|
+| PY | 33 ms | 18.4 MB | ✅ | 2025-01-04 |
+
+
+[View on LeetCode](https://leetcode.com/problems/reverse-linked-list)
