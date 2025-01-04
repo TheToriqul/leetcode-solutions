@@ -1,4 +1,11 @@
-<h2><a href="https://leetcode.com/problems/merge-two-sorted-lists">21. Merge Two Sorted Lists</a></h2><h3>Easy</h3><hr><p>You are given the heads of two sorted linked lists <code>list1</code> and <code>list2</code>.</p>
+# 21. Merge Two Sorted Lists
+
+## Difficulty: Easy
+## Topics: Linked List, Recursion
+
+## Problem
+
+<p>You are given the heads of two sorted linked lists <code>list1</code> and <code>list2</code>.</p>
 
 <p>Merge the two lists into one <strong>sorted</strong> list. The list should be made by splicing together the nodes of the first two lists.</p>
 
@@ -34,3 +41,13 @@
 	<li><code>-100 &lt;= Node.val &lt;= 100</code></li>
 	<li>Both <code>list1</code> and <code>list2</code> are sorted in <strong>non-decreasing</strong> order.</li>
 </ul>
+
+
+## Solution Stats
+
+| Language | Runtime | Memory | Status | Date |
+|----------|---------|--------|--------|------|
+| PY | 43 ms | 17.4 MB | ✅ | 2025-01-04 |
+
+
+[View on LeetCode](https://leetcode.com/problems/merge-two-sorted-lists)
