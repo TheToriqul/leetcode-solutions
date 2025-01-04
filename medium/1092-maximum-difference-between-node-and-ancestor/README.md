@@ -42,7 +42,7 @@ Among all possible differences, the maximum value of 7 is obtained by |8 - 1| = 
 
 | Language | Runtime | Memory | Status | Date |
 |----------|---------|--------|--------|------|
-| PY | 37 ms | 19.1 MB | ✅ | 2025-01-04 |
+| PY | 52 ms | 19 MB | ✅ | 2025-01-04 |
 
 
 [View on LeetCode](https://leetcode.com/problems/maximum-difference-between-node-and-ancestor)
