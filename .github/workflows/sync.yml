@@ -1,12 +1,10 @@
 name: Sync LeetCode Solutions
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'sync_leetcode.py'
-      - '.github/workflows/**'
-  
+  schedule:
+    - cron: '0 0 * * *'    # Once daily at midnight
+  workflow_dispatch:        # Manual trigger
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -16,6 +14,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}  # Using your PAT for checkout
       
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -29,16 +28,16 @@ jobs:
           
       - name: Run sync script
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_PAT: ${{ secrets.GH_PAT }}
           GITHUB_REPO: ${{ github.repository }}
           LEETCODE_SESSION: ${{ secrets.LEETCODE_SESSION }}
         run: python sync_leetcode.py
 
-      - name: Commit changes
+      - name: Commit and Push changes
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git pull origin main
           git add .
           git commit -m "Sync LeetCode solutions [skip ci]" || echo "No changes to commit"
-          git push
+          git push origin main
