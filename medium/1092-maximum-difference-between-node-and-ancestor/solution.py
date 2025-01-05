@@ -1,7 +1,7 @@
 # 1092. Maximum Difference Between Node and Ancestor
 # Difficulty: Medium
-# Runtime: 41 ms
-# Memory: 18.9 MB
+# Runtime: 38 ms
+# Memory: 19.1 MB
 
 # Definition for a binary tree node.
 # class TreeNode:
@@ -12,15 +12,15 @@
 class Solution:
     def maxAncestorDiff(self, root: Optional[TreeNode]) -> int:
         m = [0]
-        self.tree(root, m)
+        self.dfs(root, m)
         return m[0]
 
-    def tree(self, root, m):
+    def dfs(self, root, m):
         if not root:
             return float('inf'), float('-inf')
 
-        left = self.tree(root.left, m)
-        right = self.tree(root.right, m)
+        left = self.dfs(root.left, m)
+        right = self.dfs(root.right, m)
 
         min_val = min(root.val, min(left[0], right[0]))
         max_val = max(root.val, max(left[1], right[1]))
