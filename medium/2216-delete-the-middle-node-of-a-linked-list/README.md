@@ -58,7 +58,7 @@ Node 0 with value 2 is the only node remaining after removing node 1.</pre>
 
 | Language | Runtime | Memory | Status | Date |
 |----------|---------|--------|--------|------|
-| PY | 610 ms | 51.3 MB | ✅ | 2025-01-04 |
+| PY | 610 ms | 51.3 MB | ✅ | 2025-01-05 |
 
 
 [View on LeetCode](https://leetcode.com/problems/delete-the-middle-node-of-a-linked-list)
