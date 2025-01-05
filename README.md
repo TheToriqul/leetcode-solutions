@@ -91,7 +91,7 @@ leetcode-solutions/
 1. **Repository Setup**
    ```bash
    # Clone the repository
-   git clone https://github.com/yourusername/leetcode-solutions.git
+   git clone https://github.com/thetoriqul/leetcode-solutions.git
    cd leetcode-solutions
    
    # Install dependencies
