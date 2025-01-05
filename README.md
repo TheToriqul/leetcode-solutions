@@ -106,7 +106,7 @@ leetcode-solutions/
    # Add your configuration
    GH_PAT=your_github_token
    LEETCODE_SESSION=your_leetcode_session
-   GITHUB_REPO=yourusername/leetcode-solutions
+   GITHUB_REPO=thetoriqul/leetcode-solutions
    ```
 
 3. **GitHub Secret Configuration**
