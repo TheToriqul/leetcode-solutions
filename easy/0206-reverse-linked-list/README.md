@@ -45,7 +45,7 @@
 
 | Language | Runtime | Memory | Status | Date |
 |----------|---------|--------|--------|------|
-| PY | 33 ms | 18.4 MB | ✅ | 2025-01-04 |
+| PY | 33 ms | 18.4 MB | ✅ | 2025-01-05 |
 
 
 [View on LeetCode](https://leetcode.com/problems/reverse-linked-list)
