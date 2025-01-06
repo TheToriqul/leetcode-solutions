@@ -18,7 +18,7 @@ class LeetCodeGitHubSync:
     # Language to file extension mapping
     EXTENSIONS = {
         'python': 'py', 'python3': 'py', 'java': 'java',
-        'cpp': 'cpp', 'c++': 'cpp', 'javascript': 'js',
+        'c': 'c', 'c++': 'cpp', 'javascript': 'js',
         'typescript': 'ts', 'golang': 'go', 'ruby': 'rb',
         'swift': 'swift', 'kotlin': 'kt', 'rust': 'rs',
         'scala': 'scala', 'php': 'php'
