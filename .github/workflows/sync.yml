@@ -2,8 +2,8 @@ name: Sync LeetCode Solutions
 
 on:
   schedule:
-    - cron: '0 0 1 * *'    # Run at midnight (00:00) on the 1st day of every month
-  workflow_dispatch:        # Manual trigger
+    - cron: '0 0 1 * *'
+  workflow_dispatch:
 
 jobs:
   sync:
@@ -29,28 +29,40 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git fetch origin main
-          git reset --hard origin/main
       
-      - name: Run sync script
+      - name: Run sync script and commit changes
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
           GITHUB_REPO: ${{ github.repository }}
           LEETCODE_SESSION: ${{ secrets.LEETCODE_SESSION }}
-        run: python sync_leetcode.py
-
-      - name: Commit and push changes
         run: |
-          # Show any changes for debugging
+          # Run the sync script
+          python sync_leetcode.py
+          
+          echo "Checking Git status before staging..."
           git status
           
-          # Check for any changes including untracked files
-          if [[ -n $(git status -s) ]]; then
+          # Stage any changes
+          git add -A
+          
+          echo "Checking staged changes..."
+          git diff --staged --name-status
+          
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
             echo "Changes detected, committing..."
-            git add -A
-            git commit -m "sync: Update LeetCode solutions and cache [skip ci]"
+            # Show what will be committed
+            git status --short
+            
+            # Commit and push
+            git commit -m "sync: Update LeetCode solutions [skip ci]"
+            
+            echo "Pushing changes..."
             git pull --rebase origin main
             git push origin main
-          else
-            echo "No changes detected"
+            
+            echo "Commit successful. Final status:"
+            git log -1 --name-status
           fi
