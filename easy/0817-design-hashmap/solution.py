@@ -1,8 +1,3 @@
-# 817. Design HashMap
-# Difficulty: Easy
-# Runtime: 153 ms
-# Memory: 20.5 MB
-
 class MyHashMap:
     def __init__(self):
         self.map = dict()
