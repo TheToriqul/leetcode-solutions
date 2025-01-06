@@ -1,8 +1,3 @@
-# 838. Design Linked List
-# Difficulty: Medium
-# Runtime: 116 ms
-# Memory: 18.1 MB
-
 class ListNode:
     def __init__(self, val):
         self.val = val
