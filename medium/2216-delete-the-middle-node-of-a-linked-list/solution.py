@@ -1,8 +1,3 @@
-# 2216. Delete the Middle Node of a Linked List
-# Difficulty: Medium
-# Runtime: 610 ms
-# Memory: 51.3 MB
-
 # Definition for singly-linked list.
 # class ListNode:
 #     def __init__(self, val=0, next=None):
