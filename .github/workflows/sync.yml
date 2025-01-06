@@ -2,7 +2,7 @@ name: Sync LeetCode Solutions
 
 on:
   schedule:
-    - cron: '0 0 1 * *'    # Run at midnight on the 1st day of every month
+    - cron: '0 0 1 * *'    # Run at midnight (00:00) on the 1st day of every month
   workflow_dispatch:        # Manual trigger
 
 jobs:
@@ -11,18 +11,9 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
         with:
-          fetch-depth: 0
-          token: ${{ secrets.GH_PAT }}
-      
-      - name: Set up Git credentials
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git config --global core.autocrlf false
-          git config --global core.safecrlf false
+          fetch-depth: 0    # Get full history
       
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -33,6 +24,18 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+      
+      - name: Check for cache file
+        id: check-cache
+        run: |
+          if [ -f "solutions_cache.json" ]; then
+            echo "Cache file exists"
+            echo "cache_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Cache file does not exist, will be created"
+            echo "cache_exists=false" >> $GITHUB_OUTPUT
+            echo "{}" > solutions_cache.json
+          fi
           
       - name: Run sync script
         env:
@@ -41,34 +44,30 @@ jobs:
           LEETCODE_SESSION: ${{ secrets.LEETCODE_SESSION }}
         run: python sync_leetcode.py
 
-      - name: Commit and push changes
+      - name: Check for changes
+        id: git-check
         run: |
-          # Force Git to look for changes
-          git add -A
-          
-          # Check if there are any changes to commit
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "changes_detected=true" >> $GITHUB_OUTPUT
           else
-            echo "Changes detected, committing..."
-            # Pull latest changes to avoid conflicts
-            git pull origin main --rebase
-            
-            # Commit and push changes
-            git commit -m "chore: sync leetcode solutions [skip ci]"
-            git push origin main
+            echo "changes_detected=false" >> $GITHUB_OUTPUT
           fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
-      - name: Debug information
-        if: always()
+      - name: Commit and push if needed
+        if: steps.git-check.outputs.changes_detected == 'true'
         run: |
-          echo "Git status:"
-          git status
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
           
-          echo "Recent commits:"
-          git log -3 --oneline
+          git add solutions_cache.json
+          git add .
           
-          echo "Changed files:"
-          git diff --name-only HEAD~1 HEAD || echo "No changes"
+          # Different commit messages based on cache existence
+          if [ "${{ steps.check-cache.outputs.cache_exists }}" == "true" ]; then
+            git commit -m "sync: Update LeetCode solutions and cache [skip ci]"
+          else
+            git commit -m "sync: Initial cache creation and solutions sync [skip ci]"
+          fi
+          
+          git pull --rebase origin main
+          git push origin main
