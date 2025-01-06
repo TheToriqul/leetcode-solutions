@@ -47,7 +47,7 @@
 
 | Language | Runtime | Memory | Status | Last Submission |
 |----------|---------|--------|--------|-----------------|
-| python3 | 41 ms | 17.3 MB | ✅ | 2024-01-11 |
+| python3 | 37 ms | 17.4 MB | ✅ | 2024-01-11 |
 
 
 [View on LeetCode](https://leetcode.com/problems/merge-two-sorted-lists)
