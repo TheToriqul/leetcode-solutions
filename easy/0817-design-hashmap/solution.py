@@ -1,6 +1,6 @@
 # 817. Design HashMap
 # Difficulty: Easy
-# Runtime: 145 ms
+# Runtime: 153 ms
 # Memory: 20.5 MB
 
 class MyHashMap:
