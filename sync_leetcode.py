@@ -25,7 +25,7 @@ class LeetCodeGitHubSync:
     # Language to file extension mapping
     EXTENSIONS = {
         'python': 'py', 'python3': 'py', 'java': 'java',
-        'c': 'c', 'c++': 'cpp', 'javascript': 'js',
+        'c': 'c', 'cpp': 'cpp', 'c++': 'cpp', 'javascript': 'js',
         'typescript': 'ts', 'golang': 'go', 'ruby': 'rb',
         'swift': 'swift', 'kotlin': 'kt', 'rust': 'rs',
         'scala': 'scala', 'php': 'php'
@@ -55,6 +55,7 @@ class LeetCodeGitHubSync:
         try:
             contents = self.repo.get_contents(self.CACHE_FILE)
             cache_content = contents.decoded_content.decode('utf-8')
+            logger.info("Loaded existing cache file")
             return json.loads(cache_content)
         except:
             logger.info("No cache file found, creating new cache")
@@ -63,16 +64,18 @@ class LeetCodeGitHubSync:
     def save_cache(self):
         """Save the solutions cache to the repository."""
         try:
-            cache_content = json.dumps(self.solutions_cache, indent=2)
+            cache_content = json.dumps(self.solutions_cache, indent=2, sort_keys=True)
             try:
                 contents = self.repo.get_contents(self.CACHE_FILE)
-                self.repo.update_file(
-                    self.CACHE_FILE,
-                    "chore: Update solutions cache",
-                    cache_content,
-                    contents.sha
-                )
-                logger.info("Cache file updated")
+                current_content = contents.decoded_content.decode('utf-8')
+                if current_content.strip() != cache_content.strip():
+                    self.repo.update_file(
+                        self.CACHE_FILE,
+                        "chore: Update solutions cache",
+                        cache_content,
+                        contents.sha
+                    )
+                    logger.info("Cache file updated")
             except:
                 self.repo.create_file(
                     self.CACHE_FILE,
@@ -82,15 +85,17 @@ class LeetCodeGitHubSync:
                 logger.info("Cache file created")
         except Exception as e:
             logger.error(f"Error saving cache: {str(e)}")
+            raise
 
+    @staticmethod
     def retry_with_backoff(retries=3, backoff_in_seconds=1):
         """Decorator for implementing retry logic with exponential backoff."""
         def decorator(func):
             @wraps(func)
-            def wrapper(self, *args, **kwargs):
+            def wrapper(*args, **kwargs):
                 for i in range(retries):
                     try:
-                        return func(self, *args, **kwargs)
+                        return func(*args, **kwargs)
                     except Exception as e:
                         if i == retries - 1:  # Last attempt
                             raise
@@ -168,19 +173,21 @@ class LeetCodeGitHubSync:
 [View on LeetCode](https://leetcode.com/problems/{problem_data['title'].lower().replace(' ', '-')})
 """
 
-    def process_submission(self, submission: Dict):
-        """Process a single submission."""
+    def process_submission(self, submission: Dict) -> bool:
+        """
+        Process a single submission.
+        Returns True if changes were made, False otherwise.
+        """
         try:
-            # Create cache key
             problem_id = submission['title_slug']
             lang = submission['lang'].lower()
             cache_key = f"{problem_id}_{lang}"
 
             # Check if solution exists and has changed
             if cache_key in self.solutions_cache:
-                if self.solutions_cache[cache_key] == submission['code']:
+                if self.solutions_cache[cache_key].strip() == submission['code'].strip():
                     logger.debug(f"Solution unchanged for {problem_id} in {lang}")
-                    return
+                    return False
 
             # Get problem details
             problem_data = self.get_problem_details(submission['title_slug'])
@@ -189,8 +196,8 @@ class LeetCodeGitHubSync:
             difficulty = problem_data['difficulty'].lower()
             folder_name = f"{int(problem_data['questionId']):04d}-{submission['title_slug']}"
             base_path = f"{difficulty}/{folder_name}"
-
-            # Create README only for new problems
+            
+            # Create README for new problems
             readme_path = f"{base_path}/README.md"
             try:
                 self.repo.get_contents(readme_path)
@@ -209,7 +216,8 @@ class LeetCodeGitHubSync:
             
             try:
                 contents = self.repo.get_contents(file_path)
-                if contents.decoded_content.decode('utf-8') != submission['code']:
+                current_content = contents.decoded_content.decode('utf-8').strip()
+                if current_content != submission['code'].strip():
                     self.repo.update_file(
                         file_path,
                         f"feat: Update {lang} solution for {problem_data['title']}",
@@ -217,6 +225,9 @@ class LeetCodeGitHubSync:
                         contents.sha
                     )
                     logger.info(f"Updated solution for {problem_id} in {lang}")
+                else:
+                    logger.debug(f"Solution content unchanged for {problem_id} in {lang}")
+                    return False
             except:
                 self.repo.create_file(
                     file_path,
@@ -226,7 +237,8 @@ class LeetCodeGitHubSync:
                 logger.info(f"Created new solution for {problem_id} in {lang}")
 
             # Update cache
-            self.solutions_cache[cache_key] = submission['code']
+            self.solutions_cache[cache_key] = submission['code'].strip()
+            return True
             
         except Exception as e:
             logger.error(f"Error processing submission {submission['title_slug']}: {str(e)}")
@@ -237,11 +249,19 @@ class LeetCodeGitHubSync:
         logger.info("Starting LeetCode solutions sync...")
         try:
             submissions = self.get_submissions()
-            for submission in submissions:
-                self.process_submission(submission)
             
-            # Save cache after processing all submissions
-            self.save_cache()
+            changes_made = False
+            for submission in submissions:
+                if self.process_submission(submission):
+                    changes_made = True
+            
+            # Only save cache if changes were made
+            if changes_made:
+                self.save_cache()
+                logger.info("Changes detected and saved to cache")
+            else:
+                logger.info("No changes detected")
+                
             logger.info("Sync completed successfully!")
         except Exception as e:
             logger.error(f"Sync failed: {str(e)}")

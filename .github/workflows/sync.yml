@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 0    # Get full history
+          fetch-depth: 0
       
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -41,21 +41,16 @@ jobs:
 
       - name: Commit and push changes
         run: |
-          # Check if there are any changes
-          if git status --porcelain | grep .; then
-            echo "Changes detected"
-            
-            # Stage all changes
+          # Show any changes for debugging
+          git status
+          
+          # Check for any changes including untracked files
+          if [[ -n $(git status -s) ]]; then
+            echo "Changes detected, committing..."
             git add -A
-            
-            # Commit with appropriate message
             git commit -m "sync: Update LeetCode solutions and cache [skip ci]"
-            
-            # Pull latest changes and rebase
             git pull --rebase origin main
-            
-            # Push changes
             git push origin main
           else
-            echo "No changes to commit"
+            echo "No changes detected"
           fi
