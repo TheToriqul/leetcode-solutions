@@ -1,8 +1,3 @@
-# 206. Reverse Linked List
-# Difficulty: Easy
-# Runtime: 33 ms
-# Memory: 18.4 MB
-
 # Definition for singly-linked list.
 # class ListNode:
 #     def __init__(self, val=0, next=None):
