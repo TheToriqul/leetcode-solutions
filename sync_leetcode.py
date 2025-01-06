@@ -1,11 +1,45 @@
 import os
 import requests
 from github import Github
-from datetime import datetime
-import json
+from datetime import datetime, timezone
+import logging
+from typing import Dict, List, Optional
+import time
+from functools import wraps
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 class LeetCodeGitHubSync:
-    def __init__(self, github_token, github_repo, leetcode_session):
+    # Language to file extension mapping
+    EXTENSIONS = {
+        'python': 'py', 'python3': 'py', 'java': 'java',
+        'cpp': 'cpp', 'c++': 'cpp', 'javascript': 'js',
+        'typescript': 'ts', 'golang': 'go', 'ruby': 'rb',
+        'swift': 'swift', 'kotlin': 'kt', 'rust': 'rs',
+        'scala': 'scala', 'php': 'php'
+    }
+
+    # API endpoints
+    LEETCODE_GRAPHQL_URL = "https://leetcode.com/graphql"
+    LEETCODE_SUBMISSIONS_URL = "https://leetcode.com/api/submissions/"
+
+    def __init__(self, github_token: str, github_repo: str, leetcode_session: str):
+        """
+        Initialize the LeetCode-GitHub sync tool with necessary credentials.
+        
+        Args:
+            github_token: GitHub Personal Access Token
+            github_repo: GitHub repository name (format: "username/repo")
+            leetcode_session: LeetCode session cookie
+        """
+        if not all([github_token, github_repo, leetcode_session]):
+            raise ValueError("Missing required credentials")
+
         self.github = Github(github_token)
         self.repo = self.github.get_repo(github_repo)
         self.headers = {
@@ -13,9 +47,42 @@ class LeetCodeGitHubSync:
             'User-Agent': 'Mozilla/5.0',
             'Referer': 'https://leetcode.com'
         }
-        
-    def get_problem_details(self, title_slug):
-        """Fetch problem details from LeetCode"""
+        # Cache for existing files and folders
+        self.path_cache = set()
+        self._init_path_cache()
+
+    def _init_path_cache(self):
+        """Initialize cache of existing paths in the repository."""
+        try:
+            contents = self.repo.get_contents("")
+            while contents:
+                file_content = contents.pop(0)
+                self.path_cache.add(file_content.path)
+                if file_content.type == "dir":
+                    contents.extend(self.repo.get_contents(file_content.path))
+        except Exception as e:
+            logger.error(f"Error initializing path cache: {str(e)}")
+
+    def retry_with_backoff(retries=3, backoff_in_seconds=1):
+        """Decorator for implementing retry logic with exponential backoff."""
+        def decorator(func):
+            @wraps(func)
+            def wrapper(self, *args, **kwargs):
+                for i in range(retries):
+                    try:
+                        return func(self, *args, **kwargs)
+                    except Exception as e:
+                        if i == retries - 1:  # Last attempt
+                            raise
+                        wait_time = (backoff_in_seconds * 2 ** i)
+                        logger.warning(f"Attempt {i + 1} failed: {str(e)}. Retrying in {wait_time} seconds...")
+                        time.sleep(wait_time)
+            return wrapper
+        return decorator
+
+    @retry_with_backoff()
+    def get_problem_details(self, title_slug: str) -> Dict:
+        """Fetch problem details from LeetCode with retry logic."""
         query = """
         query questionData($titleSlug: String!) {
             question(titleSlug: $titleSlug) {
@@ -29,22 +96,29 @@ class LeetCodeGitHubSync:
             }
         }
         """
-        url = "https://leetcode.com/graphql"
         response = requests.post(
-            url,
+            self.LEETCODE_GRAPHQL_URL,
             json={'query': query, 'variables': {'titleSlug': title_slug}},
             headers=self.headers
         )
+        response.raise_for_status()
         return response.json()['data']['question']
 
-    def get_submissions(self):
-        """Fetch recent submissions"""
-        url = "https://leetcode.com/api/submissions/?offset=0&limit=20"
+    @retry_with_backoff()
+    def get_submissions(self, limit: int = 20) -> List[Dict]:
+        """Fetch recent accepted submissions with pagination."""
+        url = f"{self.LEETCODE_SUBMISSIONS_URL}?offset=0&limit={limit}"
         response = requests.get(url, headers=self.headers)
-        return response.json().get('submissions_dump', [])
+        response.raise_for_status()
+        submissions = response.json().get('submissions_dump', [])
+        return [s for s in submissions if s['status_display'] == 'Accepted']
 
-    def create_problem_readme(self, problem_data, stats):
-        """Create README.md for problem"""
+    def get_file_extension(self, lang: str) -> str:
+        """Get file extension for a given programming language."""
+        return self.EXTENSIONS.get(lang.lower(), 'txt')
+
+    def create_problem_readme(self, problem_data: Dict, stats: str) -> str:
+        """Create README.md content for a problem."""
         return f"""# {problem_data['questionId']}. {problem_data['title']}
 
 ## Difficulty: {problem_data['difficulty']}
@@ -56,156 +130,85 @@ class LeetCodeGitHubSync:
 
 ## Solution Stats
 
-| Language | Runtime | Memory | Status | Date |
-|----------|---------|--------|--------|------|
+| Language | Runtime | Memory | Status | Last Submission |
+|----------|---------|--------|--------|-----------------|
 {stats}
 
 [View on LeetCode](https://leetcode.com/problems/{problem_data['title'].lower().replace(' ', '-')})
 """
 
-    def get_file_extension(self, lang):
-        """Get file extension for programming language"""
-        extensions = {
-            'python': 'py',
-            'python3': 'py',
-            'java': 'java',
-            'cpp': 'cpp',
-            'c++': 'cpp',
-            'javascript': 'js',
-            'typescript': 'ts',
-            'golang': 'go',
-            'ruby': 'rb',
-            'swift': 'swift',
-            'kotlin': 'kt',
-            'rust': 'rs',
-            'scala': 'scala',
-            'php': 'php'
-        }
-        return extensions.get(lang.lower(), 'txt')
+    def process_submission(self, submission: Dict):
+        """Process a single submission."""
+        try:
+            problem_data = self.get_problem_details(submission['title_slug'])
+            
+            # Create folder structure
+            difficulty = problem_data['difficulty'].lower()
+            folder_name = f"{int(problem_data['questionId']):04d}-{submission['title_slug']}"
+            base_path = f"{difficulty}/{folder_name}"
+            
+            # Update solution file
+            extension = self.get_file_extension(submission['lang'])
+            file_path = f"{base_path}/solution.{extension}"
+            
+            self._update_or_create_file(
+                file_path=file_path,
+                content=submission['code'],
+                commit_message=f"Update {submission['lang']} solution for {problem_data['title']}"
+            )
+            
+            # Update README with submission timestamp
+            submission_date = datetime.fromtimestamp(
+                submission['timestamp'], 
+                tz=timezone.utc
+            ).strftime('%Y-%m-%d')
+            
+            stats = f"| {submission['lang']} | {submission['runtime']} | {submission['memory']} | ✅ | {submission_date} |\n"
+            readme_content = self.create_problem_readme(problem_data, stats)
+            
+            self._update_or_create_file(
+                file_path=f"{base_path}/README.md",
+                content=readme_content,
+                commit_message=f"Update README for {problem_data['title']}"
+            )
+            
+        except Exception as e:
+            logger.error(f"Error processing submission {submission['title']}: {str(e)}")
+            raise
 
-    def create_solution_file(self, submission, problem_data):
-        """Create solution file content"""
-        return f"""# {problem_data['questionId']}. {problem_data['title']}
-# Difficulty: {problem_data['difficulty']}
-# Runtime: {submission['runtime']}
-# Memory: {submission['memory']}
-
-{submission['code']}
-"""
-
-    def sync_solutions(self):
-        """Main sync function"""
-        print("Starting LeetCode solutions sync...")
-        submissions = self.get_submissions()
-        
-        for submission in submissions:
-            if submission['status_display'] != 'Accepted':
-                continue
-                
-            try:
-                print(f"\nProcessing submission for: {submission['title']}")
-                
-                problem_data = self.get_problem_details(submission['title_slug'])
-                
-                # Create folder structure
-                difficulty = problem_data['difficulty'].lower()
-                folder_name = f"{int(problem_data['questionId']):04d}-{submission['title_slug']}"
-                base_path = f"{difficulty}/{folder_name}"
-                
-                # Get file extension
-                extension = self.get_file_extension(submission['lang'])
-                file_name = f"solution.{extension}"
-                file_path = f"{base_path}/{file_name}"
-                
-                # Create solution file
-                solution_content = self.create_solution_file(submission, problem_data)
-                
-                # Check if file exists and get its SHA
-                try:
-                    contents = self.repo.get_contents(file_path)
-                    # File exists, update it
+    def _update_or_create_file(self, file_path: str, content: str, commit_message: str):
+        """Update or create a file in the repository."""
+        try:
+            if file_path in self.path_cache:
+                contents = self.repo.get_contents(file_path)
+                if contents.decoded_content.decode() != content:
                     self.repo.update_file(
                         path=file_path,
-                        message=f"Update {submission['lang']} solution for {problem_data['title']}",
-                        content=solution_content,
+                        message=commit_message,
+                        content=content,
                         sha=contents.sha
                     )
-                    print(f"Updated existing solution file: {file_path}")
-                except Exception as e:
-                    if "Not Found" in str(e):
-                        # File doesn't exist, create it
-                        try:
-                            # Ensure directory exists by trying to create README first
-                            readme_path = f"{base_path}/README.md"
-                            try:
-                                self.repo.get_contents(readme_path)
-                            except:
-                                self.repo.create_file(
-                                    path=readme_path,
-                                    message=f"Initialize directory for {problem_data['title']}",
-                                    content="# Initializing..."
-                                )
-                            
-                            # Now create the solution file
-                            self.repo.create_file(
-                                path=file_path,
-                                message=f"Add {submission['lang']} solution for {problem_data['title']}",
-                                content=solution_content
-                            )
-                            print(f"Created new solution file: {file_path}")
-                        except Exception as create_error:
-                            print(f"Error creating solution file: {str(create_error)}")
-                            continue
-                    else:
-                        print(f"Error handling solution file: {str(e)}")
-                        continue
+                    logger.info(f"Updated file: {file_path}")
+            else:
+                self.repo.create_file(
+                    path=file_path,
+                    message=commit_message,
+                    content=content
+                )
+                self.path_cache.add(file_path)
+                logger.info(f"Created file: {file_path}")
+        except Exception as e:
+            logger.error(f"Error handling file {file_path}: {str(e)}")
+            raise
 
-                # Update README
-                try:
-                    solutions_stats = ""
-                    try:
-                        dir_contents = self.repo.get_contents(base_path)
-                        for content in dir_contents:
-                            if content.name.startswith('solution.'):
-                                lang = content.name.split('.')[1].upper()
-                                solutions_stats += f"| {lang} | {submission['runtime']} | {submission['memory']} | ✅ | {datetime.now().strftime('%Y-%m-%d')} |\n"
-                    except:
-                        solutions_stats = f"| {submission['lang']} | {submission['runtime']} | {submission['memory']} | ✅ | {datetime.now().strftime('%Y-%m-%d')} |\n"
-
-                    readme_content = self.create_problem_readme(problem_data, solutions_stats)
-                    
-                    try:
-                        readme = self.repo.get_contents(f"{base_path}/README.md")
-                        self.repo.update_file(
-                            path=f"{base_path}/README.md",
-                            message=f"Update README for {problem_data['title']}",
-                            content=readme_content,
-                            sha=readme.sha
-                        )
-                        print(f"Updated README for: {problem_data['title']}")
-                    except Exception as readme_error:
-                        if "Not Found" in str(readme_error):
-                            self.repo.create_file(
-                                path=f"{base_path}/README.md",
-                                message=f"Add README for {problem_data['title']}",
-                                content=readme_content
-                            )
-                            print(f"Created README for: {problem_data['title']}")
-                        else:
-                            raise readme_error
-                except Exception as e:
-                    print(f"Error handling README: {str(e)}")
-
-            except Exception as e:
-                print(f"Error processing submission {submission['title']}: {str(e)}")
-                continue
-
-        print("\nSync completed!")
-
-if __name__ == "__main__":
-    github_token = os.getenv("GH_PAT")
-    github_repo = os.getenv("GITHUB_REPO")
-    leetcode_session = os.getenv("LEETCODE_SESSION")
-    
-    syncer = LeetCodeGitHubSync(github_token, github_repo, leetcode_session)
-    syncer.sync_solutions()
+    def sync_solutions(self):
+        """Main sync function."""
+        logger.info("Starting LeetCode solutions sync...")
+        try:
+            submissions = self.get_submissions()
+            for submission in submissions:
+                self.process_submission(submission)
+            logger.info("Sync completed successfully!")
+        except Exception as e:
+            logger.error(f"Sync failed: {str(e)}")
+            raise
