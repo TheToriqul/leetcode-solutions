@@ -40,9 +40,9 @@ Among all possible differences, the maximum value of 7 is obtained by |8 - 1| = 
 
 ## Solution Stats
 
-| Language | Runtime | Memory | Status | Date |
-|----------|---------|--------|--------|------|
-| PY | 38 ms | 19.1 MB | ✅ | 2025-01-06 |
+| Language | Runtime | Memory | Status | Last Submission |
+|----------|---------|--------|--------|-----------------|
+| python3 | 37 ms | 19.1 MB | ✅ | 2024-01-11 |
 
 
 [View on LeetCode](https://leetcode.com/problems/maximum-difference-between-node-and-ancestor)
