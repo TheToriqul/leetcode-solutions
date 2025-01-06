@@ -212,3 +212,61 @@ class LeetCodeGitHubSync:
         except Exception as e:
             logger.error(f"Sync failed: {str(e)}")
             raise
+# First keep all your existing code from the LeetCodeGitHubSync class
+# Then add this at the end of the file:
+
+def main():
+    """Main entry point with proper error handling and logging."""
+    try:
+        # Set up more detailed logging for debugging
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format='%(asctime)s - %(levelname)s - %(name)s - %(message)s'
+        )
+        
+        # Get environment variables
+        github_token = os.getenv('GH_PAT')
+        github_repo = os.getenv('GITHUB_REPO')
+        leetcode_session = os.getenv('LEETCODE_SESSION')
+        
+        # Validate environment variables
+        if not github_token:
+            raise ValueError("GH_PAT environment variable is not set")
+        if not github_repo:
+            raise ValueError("GITHUB_REPO environment variable is not set")
+        if not leetcode_session:
+            raise ValueError("LEETCODE_SESSION environment variable is not set")
+            
+        logger.info(f"Initializing sync for repository: {github_repo}")
+        
+        # Initialize and run sync
+        syncer = LeetCodeGitHubSync(
+            github_token=github_token,
+            github_repo=github_repo,
+            leetcode_session=leetcode_session
+        )
+        
+        # Test LeetCode connection before proceeding
+        logger.info("Testing LeetCode connection...")
+        test_response = requests.get(
+            "https://leetcode.com/api/problems/all/",
+            headers=syncer.headers
+        )
+        test_response.raise_for_status()
+        logger.info("LeetCode connection successful")
+        
+        # Run the sync
+        syncer.sync_solutions()
+        
+    except requests.exceptions.RequestException as e:
+        logger.error(f"API request failed: {str(e)}")
+        raise
+    except ValueError as e:
+        logger.error(f"Configuration error: {str(e)}")
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        raise
+
+if __name__ == "__main__":
+    main()
