@@ -43,9 +43,9 @@
 
 ## Solution Stats
 
-| Language | Runtime | Memory | Status | Date |
-|----------|---------|--------|--------|------|
-| PY | 33 ms | 18.4 MB | ✅ | 2025-01-06 |
+| Language | Runtime | Memory | Status | Last Submission |
+|----------|---------|--------|--------|-----------------|
+| python3 | 33 ms | 18.4 MB | ✅ | 2024-01-09 |
 
 
 [View on LeetCode](https://leetcode.com/problems/reverse-linked-list)
