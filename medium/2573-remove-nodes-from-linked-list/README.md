@@ -44,7 +44,7 @@
 
 | Language | Runtime | Memory | Status | Date |
 |----------|---------|--------|--------|------|
-| PY | 381 ms | 62.8 MB | ✅ | 2025-01-05 |
+| PY | 381 ms | 62.8 MB | ✅ | 2025-01-06 |
 
 
 [View on LeetCode](https://leetcode.com/problems/remove-nodes-from-linked-list)

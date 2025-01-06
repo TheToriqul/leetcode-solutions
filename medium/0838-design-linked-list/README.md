@@ -54,7 +54,7 @@ myLinkedList.get(1);              // return 3
 
 | Language | Runtime | Memory | Status | Date |
 |----------|---------|--------|--------|------|
-| PY | 116 ms | 18.1 MB | ✅ | 2025-01-05 |
+| PY | 116 ms | 18.1 MB | ✅ | 2025-01-06 |
 
 
 [View on LeetCode](https://leetcode.com/problems/design-linked-list)
