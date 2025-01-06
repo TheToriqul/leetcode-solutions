@@ -52,9 +52,9 @@ myLinkedList.get(1);              // return 3
 
 ## Solution Stats
 
-| Language | Runtime | Memory | Status | Date |
-|----------|---------|--------|--------|------|
-| PY | 116 ms | 18.1 MB | ✅ | 2025-01-06 |
+| Language | Runtime | Memory | Status | Last Submission |
+|----------|---------|--------|--------|-----------------|
+| python3 | 116 ms | 18.1 MB | ✅ | 2024-01-13 |
 
 
 [View on LeetCode](https://leetcode.com/problems/design-linked-list)
