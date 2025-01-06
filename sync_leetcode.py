@@ -6,6 +6,11 @@ import logging
 from typing import Dict, List, Optional
 import time
 from functools import wraps
+import hashlib
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(
@@ -15,6 +20,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class LeetCodeGitHubSync:
+    """Class to handle synchronization of LeetCode solutions to GitHub."""
+    
     # Language to file extension mapping
     EXTENSIONS = {
         'python': 'py', 'python3': 'py', 'java': 'java',
@@ -29,14 +36,7 @@ class LeetCodeGitHubSync:
     LEETCODE_SUBMISSIONS_URL = "https://leetcode.com/api/submissions/"
 
     def __init__(self, github_token: str, github_repo: str, leetcode_session: str):
-        """
-        Initialize the LeetCode-GitHub sync tool with necessary credentials.
-        
-        Args:
-            github_token: GitHub Personal Access Token
-            github_repo: GitHub repository name (format: "username/repo")
-            leetcode_session: LeetCode session cookie
-        """
+        """Initialize with required credentials."""
         if not all([github_token, github_repo, leetcode_session]):
             raise ValueError("Missing required credentials")
 
@@ -47,21 +47,29 @@ class LeetCodeGitHubSync:
             'User-Agent': 'Mozilla/5.0',
             'Referer': 'https://leetcode.com'
         }
-        # Cache for existing files and folders
-        self.path_cache = set()
+        # Cache for existing files and their content hashes
+        self.path_cache = {}
         self._init_path_cache()
 
     def _init_path_cache(self):
-        """Initialize cache of existing paths in the repository."""
+        """Initialize cache of existing paths and their content hashes."""
         try:
             contents = self.repo.get_contents("")
             while contents:
                 file_content = contents.pop(0)
-                self.path_cache.add(file_content.path)
+                if file_content.type == "file":
+                    self.path_cache[file_content.path] = hashlib.sha256(
+                        file_content.decoded_content
+                    ).hexdigest()
                 if file_content.type == "dir":
                     contents.extend(self.repo.get_contents(file_content.path))
         except Exception as e:
             logger.error(f"Error initializing path cache: {str(e)}")
+            raise
+
+    def _calculate_content_hash(self, content: str) -> str:
+        """Calculate hash of content for comparison."""
+        return hashlib.sha256(content.encode('utf-8')).hexdigest()
 
     def retry_with_backoff(retries=3, backoff_in_seconds=1):
         """Decorator for implementing retry logic with exponential backoff."""
@@ -82,7 +90,7 @@ class LeetCodeGitHubSync:
 
     @retry_with_backoff()
     def get_problem_details(self, title_slug: str) -> Dict:
-        """Fetch problem details from LeetCode with retry logic."""
+        """Fetch problem details from LeetCode."""
         query = """
         query questionData($titleSlug: String!) {
             question(titleSlug: $titleSlug) {
@@ -106,7 +114,7 @@ class LeetCodeGitHubSync:
 
     @retry_with_backoff()
     def get_submissions(self, limit: int = 20) -> List[Dict]:
-        """Fetch recent accepted submissions with pagination."""
+        """Fetch recent accepted submissions."""
         url = f"{self.LEETCODE_SUBMISSIONS_URL}?offset=0&limit={limit}"
         response = requests.get(url, headers=self.headers)
         response.raise_for_status()
@@ -136,6 +144,45 @@ class LeetCodeGitHubSync:
 
 [View on LeetCode](https://leetcode.com/problems/{problem_data['title'].lower().replace(' ', '-')})
 """
+
+    def _update_or_create_file(self, file_path: str, content: str, commit_message: str):
+        """Update or create a file in the repository only if content has changed."""
+        try:
+            # Calculate hash of new content
+            new_content_hash = self._calculate_content_hash(content)
+            
+            # Check if file exists and content has changed
+            if file_path in self.path_cache:
+                if self.path_cache[file_path] == new_content_hash:
+                    logger.debug(f"Content unchanged for {file_path}, skipping update")
+                    return
+                
+                # Content has changed, update the file
+                contents = self.repo.get_contents(file_path)
+                self.repo.update_file(
+                    path=file_path,
+                    message=commit_message,
+                    content=content.encode('utf-8'),
+                    sha=contents.sha,
+                    branch="main"
+                )
+                logger.info(f"Updated file: {file_path}")
+            else:
+                # Create new file
+                self.repo.create_file(
+                    path=file_path,
+                    message=commit_message,
+                    content=content.encode('utf-8'),
+                    branch="main"
+                )
+                logger.info(f"Created new file: {file_path}")
+            
+            # Update cache with new content hash
+            self.path_cache[file_path] = new_content_hash
+                    
+        except Exception as e:
+            logger.error(f"Error handling file {file_path}: {str(e)}")
+            raise
 
     def process_submission(self, submission: Dict):
         """Process a single submission."""
@@ -176,46 +223,6 @@ class LeetCodeGitHubSync:
             logger.error(f"Error processing submission {submission['title']}: {str(e)}")
             raise
 
-    def _update_or_create_file(self, file_path: str, content: str, commit_message: str):
-        """Update or create a file in the repository."""
-        try:
-            # Ensure content is properly encoded
-            content_bytes = content.encode('utf-8')
-            
-            try:
-                # Try to get existing file
-                contents = self.repo.get_contents(file_path)
-                current_content = contents.decoded_content.decode('utf-8')
-                
-                # Only update if content has changed
-                if current_content != content:
-                    self.repo.update_file(
-                        path=file_path,
-                        message=commit_message,
-                        content=content_bytes,
-                        sha=contents.sha,
-                        branch="main"
-                    )
-                    logger.info(f"Updated file: {file_path}")
-                    
-            except Exception as e:
-                if "404" in str(e):  # File doesn't exist
-                    # Create new file
-                    self.repo.create_file(
-                        path=file_path,
-                        message=commit_message,
-                        content=content_bytes,
-                        branch="main"
-                    )
-                    self.path_cache.add(file_path)
-                    logger.info(f"Created new file: {file_path}")
-                else:
-                    raise
-                    
-        except Exception as e:
-            logger.error(f"Error handling file {file_path}: {str(e)}")
-            raise
-
     def sync_solutions(self):
         """Main sync function."""
         logger.info("Starting LeetCode solutions sync...")
@@ -227,30 +234,18 @@ class LeetCodeGitHubSync:
         except Exception as e:
             logger.error(f"Sync failed: {str(e)}")
             raise
-# First keep all your existing code from the LeetCodeGitHubSync class
-# Then add this at the end of the file:
 
 def main():
     """Main entry point with proper error handling and logging."""
     try:
-        # Set up more detailed logging for debugging
-        logging.basicConfig(
-            level=logging.DEBUG,
-            format='%(asctime)s - %(levelname)s - %(name)s - %(message)s'
-        )
-        
         # Get environment variables
         github_token = os.getenv('GH_PAT')
         github_repo = os.getenv('GITHUB_REPO')
         leetcode_session = os.getenv('LEETCODE_SESSION')
         
         # Validate environment variables
-        if not github_token:
-            raise ValueError("GH_PAT environment variable is not set")
-        if not github_repo:
-            raise ValueError("GITHUB_REPO environment variable is not set")
-        if not leetcode_session:
-            raise ValueError("LEETCODE_SESSION environment variable is not set")
+        if not all([github_token, github_repo, leetcode_session]):
+            raise ValueError("Missing required environment variables")
             
         logger.info(f"Initializing sync for repository: {github_repo}")
         
