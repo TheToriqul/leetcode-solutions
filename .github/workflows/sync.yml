@@ -25,7 +25,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           
-      - name: Fetch latest changes
+      - name: Configure Git
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
@@ -39,36 +39,23 @@ jobs:
           LEETCODE_SESSION: ${{ secrets.LEETCODE_SESSION }}
         run: python sync_leetcode.py
 
-      - name: Handle cache file
+      - name: Commit and push changes
         run: |
-          if [ -f "solutions_cache.json" ]; then
-            # If there's a conflict, take the newer version
-            if git diff --name-only --diff-filter=U | grep -q "solutions_cache.json"; then
-              git checkout --theirs solutions_cache.json
-              git add solutions_cache.json
-            fi
-          fi
-
-      - name: Check for changes
-        id: git-check
-        run: |
-          if [[ -n "$(git status --porcelain)" ]]; then
-            echo "changes_detected=true" >> $GITHUB_OUTPUT
+          # Check if there are any changes
+          if git status --porcelain | grep .; then
+            echo "Changes detected"
+            
+            # Stage all changes
+            git add -A
+            
+            # Commit with appropriate message
+            git commit -m "sync: Update LeetCode solutions and cache [skip ci]"
+            
+            # Pull latest changes and rebase
+            git pull --rebase origin main
+            
+            # Push changes
+            git push origin main
           else
-            echo "changes_detected=false" >> $GITHUB_OUTPUT
+            echo "No changes to commit"
           fi
-
-      - name: Commit and push if needed
-        if: steps.git-check.outputs.changes_detected == 'true'
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          
-          # Add all changes including cache
-          git add .
-          
-          # Commit changes
-          git commit -m "sync: Update LeetCode solutions and cache [skip ci]"
-          
-          # Push changes with force-with-lease to prevent conflicts
-          git push --force-with-lease origin main
