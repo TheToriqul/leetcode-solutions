@@ -51,7 +51,7 @@
 
 | Language | Runtime | Memory | Status | Last Submission |
 |----------|---------|--------|--------|-----------------|
-| c | 105 ms | 8.7 MB | ✅ | 2025-01-06 |
+| cpp | 0 ms | 14.8 MB | ✅ | 2025-01-06 |
 
 
 [View on LeetCode](https://leetcode.com/problems/two-sum)
