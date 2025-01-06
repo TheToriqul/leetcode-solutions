@@ -51,7 +51,7 @@ myHashMap.get(2);    // return -1 (i.e., not found), The map is now [[1,1]]
 
 | Language | Runtime | Memory | Status | Date |
 |----------|---------|--------|--------|------|
-| PY | 153 ms | 20.5 MB | ✅ | 2025-01-05 |
+| PY | 145 ms | 20.5 MB | ✅ | 2025-01-06 |
 
 
 [View on LeetCode](https://leetcode.com/problems/design-hashmap)
