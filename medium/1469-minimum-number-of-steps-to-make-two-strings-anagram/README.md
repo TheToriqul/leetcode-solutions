@@ -48,9 +48,9 @@
 
 ## Solution Stats
 
-| Language | Runtime | Memory | Status | Date |
-|----------|---------|--------|--------|------|
-| PY | 132 ms | 17.8 MB | ✅ | 2025-01-06 |
+| Language | Runtime | Memory | Status | Last Submission |
+|----------|---------|--------|--------|-----------------|
+| python3 | 135 ms | 17.8 MB | ✅ | 2024-01-13 |
 
 
 [View on LeetCode](https://leetcode.com/problems/minimum-number-of-steps-to-make-two-strings-anagram)
