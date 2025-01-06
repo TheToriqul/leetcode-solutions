@@ -1,8 +1,3 @@
-# 2573. Remove Nodes From Linked List
-# Difficulty: Medium
-# Runtime: 381 ms
-# Memory: 62.8 MB
-
 # Definition for singly-linked list.
 # class ListNode:
 #     def __init__(self, val=0, next=None):
