@@ -17,13 +17,13 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GH_PAT }}
       
-      - name: Set up Git
+      - name: Set up Git credentials
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          # Ensure the repository is in safe directory list
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          
+          git config --global core.autocrlf false
+          git config --global core.safecrlf false
+      
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -40,25 +40,35 @@ jobs:
           GITHUB_REPO: ${{ github.repository }}
           LEETCODE_SESSION: ${{ secrets.LEETCODE_SESSION }}
         run: python sync_leetcode.py
-        
-      - name: Check and commit changes
+
+      - name: Commit and push changes
         run: |
-          if [[ -n "$(git status --porcelain)" ]]; then
-            echo "Changes detected"
-            git add .
-            git commit -m "Sync LeetCode solutions [skip ci]"
-            git pull --rebase origin main
-            git push origin main
-          else
+          # Force Git to look for changes
+          git add -A
+          
+          # Check if there are any changes to commit
+          if git diff --staged --quiet; then
             echo "No changes to commit"
+          else
+            echo "Changes detected, committing..."
+            # Pull latest changes to avoid conflicts
+            git pull origin main --rebase
+            
+            # Commit and push changes
+            git commit -m "chore: sync leetcode solutions [skip ci]"
+            git push origin main
           fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
       - name: Debug information
         if: always()
         run: |
-          echo "Repository status:"
+          echo "Git status:"
           git status
-          echo "Latest commit:"
-          git log -1
-          echo "Remote configuration:"
-          git remote -v
+          
+          echo "Recent commits:"
+          git log -3 --oneline
+          
+          echo "Changed files:"
+          git diff --name-only HEAD~1 HEAD || echo "No changes"

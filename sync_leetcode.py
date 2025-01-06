@@ -179,24 +179,39 @@ class LeetCodeGitHubSync:
     def _update_or_create_file(self, file_path: str, content: str, commit_message: str):
         """Update or create a file in the repository."""
         try:
-            if file_path in self.path_cache:
+            # Ensure content is properly encoded
+            content_bytes = content.encode('utf-8')
+            
+            try:
+                # Try to get existing file
                 contents = self.repo.get_contents(file_path)
-                if contents.decoded_content.decode() != content:
+                current_content = contents.decoded_content.decode('utf-8')
+                
+                # Only update if content has changed
+                if current_content != content:
                     self.repo.update_file(
                         path=file_path,
                         message=commit_message,
-                        content=content,
-                        sha=contents.sha
+                        content=content_bytes,
+                        sha=contents.sha,
+                        branch="main"
                     )
                     logger.info(f"Updated file: {file_path}")
-            else:
-                self.repo.create_file(
-                    path=file_path,
-                    message=commit_message,
-                    content=content
-                )
-                self.path_cache.add(file_path)
-                logger.info(f"Created file: {file_path}")
+                    
+            except Exception as e:
+                if "404" in str(e):  # File doesn't exist
+                    # Create new file
+                    self.repo.create_file(
+                        path=file_path,
+                        message=commit_message,
+                        content=content_bytes,
+                        branch="main"
+                    )
+                    self.path_cache.add(file_path)
+                    logger.info(f"Created new file: {file_path}")
+                else:
+                    raise
+                    
         except Exception as e:
             logger.error(f"Error handling file {file_path}: {str(e)}")
             raise
