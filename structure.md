@@ -21,4 +21,8 @@ leetcode-solutions/              # Root directory
 ├── .gitignore                 # Git ignore file
 ├── README.md                  # Project documentation
 ├── requirements.txt           # Python dependencies
-└── sync_leetcode.py          # Main sync script
+├── structure.md
+├── architecture.png          # Project architecture
+├── sync_leetcode.py          # Main sync script
+├── LICENSE
+└── usage.md
