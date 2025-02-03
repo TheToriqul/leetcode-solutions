@@ -273,7 +273,6 @@ Connect with me:
 - Email: [toriqul.int@gmail.com](mailto:toriqul.int@gmail.com)
 - LinkedIn: [thetoriqul](https://www.linkedin.com/in/thetoriqul/)
 - GitHub: [@TheToriqul](https://github.com/TheToriqul)
-- Phone: +65 8936 7705, +8801765 939006
 
 ## 📄 License
 
