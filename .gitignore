@@ -1,4 +1,3 @@
-# Create .gitignore
 echo "# Python
 __pycache__/
 *.py[cod]
@@ -13,4 +12,5 @@ node_modules/
 .vscode/
 .idea/
 " > .gitignore
+.replit
 todo.md
