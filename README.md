@@ -33,7 +33,7 @@ An enterprise-grade automation system that synchronizes, organizes, and document
 
 ## 🚀 Key Features
 
-- **Automated Synchronization**: Daily automatic sync of your LeetCode solutions
+- **Automated Synchronization**: Daily automatic sync of your LeetCode solutions (my workflow will run at midnight (00:00) on the first day of every month. Modify for your own schedule)
 - **Smart Organization**: Solutions categorized by difficulty and topics
 - **Comprehensive Documentation**: Detailed README for each problem
 - **Multi-language Support**: Handles solutions in various programming languages
@@ -105,7 +105,7 @@ leetcode-solutions/
    
    # Add your configuration
    GH_PAT=your_github_token
-   LEETCODE_SESSION=your_leetcode_session
+   LEETCODE_SESSION=your_leetcode_session (Remeber, you have to regularly monitor the credentials)
    GITHUB_REPO=thetoriqul/leetcode-solutions
    ```
 
@@ -116,7 +116,7 @@ leetcode-solutions/
    Required Secrets:
    ```yaml
    GH_PAT: your_github_personal_access_token
-   LEETCODE_SESSION: your_leetcode_session_cookie
+   LEETCODE_SESSION: your_leetcode_session_cookie (Remeber, you have to regularly monitor the credentials)
    ```
 
 4. **GitHub Personal Access Token Setup**
@@ -139,7 +139,7 @@ leetcode-solutions/
 ## 🎯 Usage
 
 ### Automatic Synchronization
-Solutions are automatically synchronized daily at midnight UTC.
+Solutions are automatically synchronized at midnight (00:00) on the first day of every month.
 
 ### Manual Synchronization
 1. Visit the Actions tab
